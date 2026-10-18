@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en-IE"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Irish data centre model</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E8EBE6;--panel:#F5F6F2;--ink:#1D2B2B;--mute:#56645F;--line:#C9D0C8;--slate:#2E5A6B;--heath:#7A5A86;--gorse:#B98A12;--ok:#2F7A4F;--bad:#B0432F;--sky1:#9fb8c6;--sky2:#dfe6e2;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141C1C;--panel:#1C2626;--ink:#E6ECE7;--mute:#9AA8A2;--line:#2F3D3B;--slate:#6FAFC6;--heath:#B39AC0;--gorse:#E0B64A;--ok:#6CC48F;--bad:#E58B76;--sky1:#1a2a33;--sky2:#34423f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141C1C;--panel:#1C2626;--ink:#E6ECE7;--mute:#9AA8A2;--line:#2F3D3B;--slate:#6FAFC6;--heath:#B39AC0;--gorse:#E0B64A;--ok:#6CC48F;--bad:#E58B76;--sky1:#1a2a33;--sky2:#34423f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Instrument Sans",system-ui,sans-serif}
+h1,h2{font-family:"Bricolage Grotesque","Trebuchet MS",sans-serif;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,44px)}h2{font-size:19px;margin-bottom:10px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 48px}
+.lead{max-width:62ch;color:var(--mute);margin:8px 0 0}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:0 0 14px;padding:10px 14px 4px;min-width:0}
+legend{font-weight:600;padding:0 6px}
+.f{margin:0 0 10px}.f label{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.f b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--slate)}
+input:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:0 0 10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:20px}
+.rows{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:0}
+.rows dt{color:var(--mute)}.rows dd{margin:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+svg{display:block;max-width:100%;height:auto}
+svg text{font-family:inherit;fill:var(--ink);font-size:12px}
+.note{font-size:14px;color:var(--mute);margin:10px 0 0}
+.warn{border-left:4px solid var(--gorse);padding:8px 12px;margin:0 0 20px;background:var(--panel);font-size:14px}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.stage{position:relative;margin-top:20px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+#cv{height:min(70vh,640px);min-height:360px;background:linear-gradient(var(--sky1),var(--sky2) 75%)}
+#cv canvas{display:block;touch-action:none;cursor:grab}
+.hint{position:absolute;top:10px;left:14px;margin:0;font-size:13px;color:var(--mute)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px}
+.tabs button{font:inherit;font-weight:600;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.tabs button[aria-expanded=true]{background:var(--slate);color:var(--bg);border-color:var(--slate)}
+.tabs button:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+.panel{padding:16px 18px;border-top:1px solid var(--line);background:var(--panel)}
+.sc{overflow-x:auto}.sc svg{min-width:640px}
+@media(min-width:861px){.tabs{position:absolute;left:0;bottom:0}.panel{position:absolute;top:12px;right:12px;bottom:60px;width:390px;border:1px solid var(--line);border-radius:6px;overflow:auto}.panel.wide{width:min(720px,calc(100% - 24px))}}
+.ctl{position:absolute;top:34px;left:12px;display:flex;gap:6px;flex-wrap:wrap}
+.ctl button{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.ctl button[aria-pressed=true]{background:var(--slate);color:var(--bg);border-color:var(--slate)}
+.ctl button:focus-visible,select:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+.tip{position:absolute;left:12px;top:78px;max-width:300px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:14px}
+.tip h3{margin:0 0 4px;font:600 16px "Bricolage Grotesque",sans-serif}.tip p{margin:0}
+@media(max-width:600px){.hint{right:12px}.ctl{top:62px}.tip{top:108px}}
+select{font:inherit;width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+</style></head>
+<body><div class="wrap">
+<h1>Irish data centre model</h1>
+<p class="lead">The facility seen from outside, sized by your numbers. Open a tab to change the assumptions or read the power and money results. Defaults are placeholder assumptions, so check them against real quotes.</p>
+<div class="stage"><div id="cv"></div><p class="hint">Drag to rotate, pinch or scroll to zoom, tap equipment for details</p><div class="ctl"><button id="b_cut" aria-pressed="false">Look inside</button><button id="b_night" aria-pressed="false">Night</button><button id="b_rain" aria-pressed="false">Rain</button><button id="b_in" aria-label="Zoom in">+</button><button id="b_out" aria-label="Zoom out">−</button></div><div class="tip" id="tip" hidden></div>
+<div class="tabs"><button data-p="p_inputs" aria-controls="p_inputs" aria-expanded="false">Assumptions</button><button data-p="p_plan" aria-controls="p_plan" aria-expanded="false">Site plan</button><button data-p="p_power" aria-controls="p_power" aria-expanded="false">Power</button><button data-p="p_money" aria-controls="p_money" aria-expanded="false">Money</button><button data-p="p_chart" aria-controls="p_chart" aria-expanded="false">Cash flow</button></div>
+<section class="panel" id="p_inputs" hidden><h2>Assumptions</h2><div id="inputs"></div></section>
+<section class="panel wide" id="p_plan" hidden><h2>Site plan</h2><div class="sc" id="plan"></div><p class="note">Each hall holds up to 5 MW of IT load. The darker part is IT; the lighter part is cooling and other overhead (set by PUE). Purple is on-site generation or storage.</p></section>
+<section class="panel" id="p_power" hidden><h2>Power</h2><div id="flag"></div><dl class="rows" id="power"></dl></section>
+<section class="panel" id="p_money" hidden><h2>Money</h2><dl class="rows" id="money"></dl></section>
+<section class="panel wide" id="p_chart" hidden><h2>Cash flow over 20 years</h2><div class="sc" id="chart"></div><p class="note">Bars show yearly cash after tax. The line shows the running total of your equity cash, after loan payments. Residual value is added in year 20.</p></section>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const S=[
+["Facility",[["it","IT load at full build",2,60,1,20," MW"],["pue","PUE (overhead factor)",1.1,1.6,.01,1.25,""],["util","Average use of IT capacity",30,100,1,70,"%"],["ramp","Years to fill the halls",1,8,1,4," yrs"]]],
+["Build and running costs",[["build","Build cost per MW of IT",6,16,.5,11,"m €"],["land","Land, planning and fees",0,60,1,12,"m €"],["opex","Yearly running cost (of build)",1,8,.1,3.5,"%"]]],
+["Income and power price",[["rent","Rent per kW per month",80,250,5,130," €"],["mk","Markup on power passed to customers",0,20,1,5,"%"],["price","Electricity price",80,260,5,150," €/MWh"]]],
+["Timing and funding",[["phases","Build phases",1,4,1,2," phases"],["infl","Yearly price rises",0,6,.5,2,"%"],["debt","Share paid by loan",0,80,5,50,"%"],["rate","Loan interest",3,10,.25,6,"%"],["term","Loan repayment period",5,20,1,15," yrs"]]],["Finance",[["tax","Corporation tax",12.5,25,.5,12.5,"%"],["disc","Discount rate",4,14,.5,8,"%"],["res","Residual value (× year-20 profit)",0,12,.5,8,"×"]]]];
+const G=[["share","Share of grid capacity covered",50,100,5,100,"%"],["gen","On-site generation or storage cost",.5,1.5,.05,.9,"m € / MW"],["cap","Market income from that capacity",0,100,5,40,"k € / MW / yr"],["ren","New renewable share of annual energy",0,100,5,80,"%"],["prem","Renewable premium on that energy",0,40,1,10," €/MWh"],["hours","On-site plant running hours",0,2000,50,400," h/yr"],["fuel","Fuel and carbon cost when running",60,250,5,140," €/MWh"]];
+const SITES=[{n:"Custom (my own numbers)",rf:1,note:""},
+{n:"Dublin area",land:25,price:155,pue:1.25,prem:12,rf:1,note:"Dublin is the most constrained part of the grid, so a new connection there may be refused."},
+{n:"Cork and Munster",land:12,price:150,pue:1.22,prem:10,rf:.95,note:"Mid-range land costs and a mild, windy climate. Check grid headroom with the system operators."},
+{n:"Midlands",land:8,price:150,pue:1.23,prem:9,rf:.85,note:"Cheaper land and more likely grid headroom, but further from the main fibre routes, so rents are lower."},
+{n:"West coast",land:6,price:148,pue:1.2,prem:6,rf:.8,note:"Cool, windy and cheap to build, but far from fibre hubs, so rents are lower."}];
+let SITE=SITES[0],RF=1;
+const siteHTML=()=>`<fieldset><legend>Site</legend><div class="f"><select id="site" aria-label="Site">${SITES.map((x,i)=>`<option value="${i}">${x.n}</option>`).join("")}</select></div><p class="note">Presets fill in land, power price, PUE and renewable premium. They’re illustrative assumptions, not market data.</p></fieldset>`;
+function setSite(i){SITE=SITES[i];RF=SITE.rf;if(SITE.land===undefined)return;["land","price","prem","pue"].forEach(k=>{const e=document.getElementById(k);e.value=V[k]=SITE[k];document.getElementById("v_"+k).textContent=SITE[k]+e.dataset.u})}
+const V={};let apply=true;
+const f=(n,d=1)=>n.toLocaleString("en-IE",{maximumFractionDigits:d,minimumFractionDigits:d});
+const fld=a=>{V[a[0]]=a[5];return `<div class="f"><label for="${a[0]}">${a[1]}<b id="v_${a[0]}">${a[5]}${a[6]}</b></label><input type="range" id="${a[0]}" min="${a[2]}" max="${a[3]}" step="${a[4]}" value="${a[5]}" data-u="${a[6]}"></div>`};
+document.getElementById("inputs").innerHTML=siteHTML()+S.map(s=>`<fieldset><legend>${s[0]}</legend>${s[1].map(fld).join("")}</fieldset>`).join("")+
+`<fieldset><legend>Grid connection conditions</legend><label class="chk"><input type="checkbox" id="apply" checked>Apply the regulator’s rules for sites over 10 MVA</label>${G.map(fld).join("")}</fieldset>`;
+document.getElementById("inputs").addEventListener("input",e=>{const t=e.target;if(t.id==="site")setSite(+t.value);else if(t.id==="apply")apply=t.checked;else{V[t.id]=+t.value;document.getElementById("v_"+t.id).textContent=t.value+t.dataset.u}run()});
+function irr(c){let lo=-.5,hi=1;const n=r=>c.reduce((s,x,i)=>s+x/Math.pow(1+r,i),0);if(n(lo)*n(hi)>0)return null;for(let i=0;i<80;i++){const m=(lo+hi)/2;n(lo)*n(m)<=0?hi=m:lo=m}return(lo+hi)/2}
+function calc(){
+const peak=V.it*V.pue,mic=peak/.95,on=apply&&mic>10,gen=on?mic*V.share/100:0,P=V.phases,d=V.debt/100,r=V.rate/100,ii=V.infl/100;
+const cb=V.it*V.build,cg=gen*V.gen,cap=cb+V.land+cg,loanT=d*cap,pmt=loanT?loanT*r/(1-Math.pow(1+r,-V.term)):0;
+const cf=[],uf=[],rows=[];let eb=0,mwh=0,dscr=null;
+const c0=V.land+cg+cb/P;let bal=d*c0;cf.push(-(c0-bal));uf.push(-c0);
+for(let y=1;y<=20;y++){
+const fx=Math.pow(1+ii,y-1),occ=Math.min(1,y/P,y/V.ramp),e=V.it*V.util/100*V.pue*8760*occ;
+const rs=on?Math.min(V.ren/100,V.ren/100*y/6):0,el=e*(V.price+rs*V.prem)*fx/1e6;
+const rev=V.it*1000*occ*V.rent*RF*fx*12/1e6+el*(1+V.mk/100);
+const ox=(cb*V.opex/100+cg*.03)*fx,ci=gen*V.cap/1000*fx,fu=gen*V.hours*(V.price-V.fuel)*fx/1e6;
+eb=rev-el-ox+ci+fu;mwh=e;
+const intr=bal*r,pr=y>=P&&y<P+V.term&&pmt?pmt-intr:0,ds=intr+pr;bal-=pr;
+const dep=cap/20,tu=Math.max(0,eb-dep)*V.tax/100,tl=Math.max(0,eb-dep-intr)*V.tax/100;
+const cx=y<P?cb/P:0,dr=d*cx;bal+=dr;
+if(ds>0&&y>=P){const q=(eb-tl)/ds;dscr=dscr===null?q:Math.min(dscr,q)}
+const rv=y===20?V.res*eb:0,cc=eb-tl-ds-(cx-dr);
+cf.push(cc+rv-(y===20?bal:0));uf.push(eb-tu-cx+rv);rows.push({y,c:cc,eb})}
+let cum=0,pb=null;const cu=cf.map(x=>cum+=x);cu.forEach((x,i)=>{if(pb===null&&i>0&&x>=0)pb=i});
+const npv=uf.reduce((s,x,i)=>s+x/Math.pow(1+V.disc/100,i),0);
+return{peak,mic,on,gen,cb,cg,cap,cf,cu,rows,eb:rows[9].eb,mwh,npv,irr:irr(uf),eirr:irr(cf),pb,dscr,eq:cap-loanT,wind:mwh*(on?V.ren/100:0)/(8760*.35)}}
+function plan(m){
+const n=Math.min(12,Math.ceil(V.it/5)),cols=Math.min(4,n),W=720,hw=118,hh=64,g=10,x0=20,y0=46,rowsN=Math.ceil(n/cols);
+let s=`<svg viewBox="0 0 ${W} ${Math.max(250,y0+rowsN*(hh+g)+40)}" role="img" aria-label="Site plan with ${n} data halls">`;
+s+=`<text x="${x0}" y="22" style="font-weight:600">Grid in: ${f(m.mic,0)} MVA</text><line x1="${x0+110}" y1="18" x2="560" y2="18" stroke="var(--slate)" stroke-width="2"/>`;
+const bx=x0+cols*(hw+g)+14;
+s+=`<rect x="${bx}" y="${y0}" width="62" height="86" fill="none" stroke="var(--ink)" stroke-width="1.5"/><text x="${bx+6}" y="${y0+20}">Sub-</text><text x="${bx+6}" y="${y0+36}">station</text><line x1="${bx+31}" y1="18" x2="${bx+31}" y2="${y0}" stroke="var(--slate)" stroke-width="2"/>`;
+let left=V.it;
+for(let i=0;i<n;i++){const it=Math.min(5,left),c=i%cols,r=Math.floor(i/cols),x=x0+c*(hw+g),y=y0+r*(hh+g);left-=it;
+const w=hw*it/5,itw=w/m.peak*V.it*0+w*(1/V.pue);
+s+=`<rect x="${x}" y="${y}" width="${hw}" height="${hh}" fill="none" stroke="var(--line)"/><rect x="${x}" y="${y}" width="${itw}" height="${hh}" fill="var(--slate)"/><rect x="${x+itw}" y="${y}" width="${w-itw}" height="${hh}" fill="var(--slate)" opacity=".35"/><text x="${x+6}" y="${y+hh-8}" style="fill:#fff;font-weight:600">Hall ${i+1} · ${f(it,0)} MW</text>`}
+if(n<Math.ceil(V.it/5))s+=`<text x="${x0}" y="${y0+rowsN*(hh+g)+14}">+ ${Math.ceil(V.it/5)-n} more halls not drawn</text>`;
+const gx=bx+90,gh=m.on?Math.min(150,14+m.gen*3.2):0;
+if(m.on)s+=`<rect x="${gx}" y="${y0}" width="96" height="${gh}" fill="var(--heath)"/><text x="${gx+6}" y="${y0+18}" style="fill:#fff;font-weight:600">On-site</text><text x="${gx+6}" y="${y0+34}" style="fill:#fff">${f(m.gen,0)} MW</text><line x1="${bx+62}" y1="${y0+30}" x2="${gx}" y2="${y0+30}" stroke="var(--heath)" stroke-width="2"/>`;
+else s+=`<text x="${gx}" y="${y0+16}" style="fill:var(--mute)">No on-site plant required</text>`;
+return s+`<line x1="${bx}" y1="${y0+43}" x2="${x0+cols*(hw+g)-g}" y2="${y0+43}" stroke="var(--slate)" stroke-dasharray="4 3"/></svg>`}
+function chart(m){
+const W=720,H=230,p=40,mx=Math.max(...m.cu.map(Math.abs)),sx=i=>p+i*(W-2*p)/20,sy=v=>H/2-v/mx*(H/2-24);
+let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cash flow chart"><line x1="${p}" y1="${sy(0)}" x2="${W-p}" y2="${sy(0)}" stroke="var(--line)"/>`;
+m.rows.forEach(r=>{const h=Math.abs(sy(r.c)-sy(0)),y=r.c>=0?sy(r.c):sy(0);s+=`<rect x="${sx(r.y)-7}" y="${y}" width="14" height="${h}" fill="${r.c>=0?"var(--ok)":"var(--bad)"}" opacity=".55"/>`});
+s+=`<polyline fill="none" stroke="var(--slate)" stroke-width="2.5" points="${m.cu.map((v,i)=>sx(i)+","+sy(v)).join(" ")}"/>`;
+[0,5,10,15,20].forEach(i=>s+=`<text x="${sx(i)}" y="${H-6}" text-anchor="middle">Year ${i}</text>`);
+s+=`<text x="${p}" y="14">€${f(mx,0)}m</text><text x="${p}" y="${sy(m.cu[0])-6}">−€${f(-m.cf[0],0)}m</text>`;
+return s+"</svg>"}
+function run(){
+const m=calc(),cl=(l,v)=>`<dt>${l}</dt><dd>${v}</dd>`;
+document.getElementById("plan").innerHTML=plan(m);
+document.getElementById("flag").innerHTML=(SITE.note?`<p class="warn">${SITE.note}</p>`:"")+(m.on?`<p class="warn">This site asks for ${f(m.mic,0)} MVA, above the 10 MVA line. Under the regulator’s December 2025 policy, a site this size has to bring its own generation or storage and source most of its energy from new Irish renewables. Both are included below. Turn the switch off to see the plain grid-only case.</p>`:(V.it*V.pue/.95<=10?`<p class="warn">Under 10 MVA, so the generation and renewable conditions do not apply here.</p>`:`<p class="warn">Grid conditions are switched off. In practice a new site above 10 MVA would face them.</p>`));
+document.getElementById("power").innerHTML=cl("Peak draw at full build",f(m.peak)+" MW")+cl("Grid connection asked for",f(m.mic,0)+" MVA")+cl("Overhead beyond IT",f(V.it*(V.pue-1))+" MW")+cl("Yearly energy at full fill",f(m.mwh/1000,0)+" GWh")+cl("On-site generation or storage",m.on?f(m.gen,0)+" MW":"None")+cl("New wind that matches the renewable share",m.on?"≈ "+f(m.wind,0)+" MW":"None");
+const pc=v=>v===null?"n/a":f(v*100)+"%";
+document.getElementById("money").innerHTML=cl("Total build spend","€"+f(m.cap,0)+"m")+cl("Of which on-site plant","€"+f(m.cg,0)+"m")+cl("Paid from your equity","€"+f(m.eq,0)+"m")+cl("Profit before tax, year 10","€"+f(m.eb,1)+"m")+cl("Project return (IRR)",pc(m.irr))+cl("Equity return (IRR)",pc(m.eirr))+cl("Net present value",`<span class="${m.npv>=0?"pos":"neg"}">€${f(m.npv,0)}m</span>`)+cl("Weakest debt cover",m.dscr===null?"No debt":f(m.dscr,2)+"×")+cl("Equity pays back",m.pb?"Year "+m.pb:"Not within 20 years");
+document.getElementById("chart").innerHTML=chart(m);if(Gp)build3d(m)}
+let R,Sc,Cam,Gp,H1,D1,PM,envT,LV,WM,LM,SG,az=-.55,ev=.34,dist=230,taz=-.55,tev=.34,tdist=230,fit=230,auto=true,tg=null,blades=[],lastK="",lastN=0,dk0=null,SKIN=[],INT=[],sk=null,CM=null,CX=0,NIGHT=null,RAIN=false,CUT=false,Cr=[],RN=null;
+const rm=matchMedia("(prefers-reduced-motion: reduce)"),mq=matchMedia("(prefers-color-scheme: dark)"),X={},Cm={},Mc={};
+const isDk=()=>NIGHT!==null?NIGHT:document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":mq.matches;
+const U=new THREE.BoxGeometry(1,1,1),Cy=new THREE.CylinderGeometry(1,1,1,14),Tw=new THREE.CylinderGeometry(.5,1,1,12),Co=new THREE.ConeGeometry(1,1,8),Py=new THREE.ConeGeometry(1,1,4,6,true),Sp=new THREE.IcosahedronGeometry(1,1),Pl=new THREE.PlaneGeometry(1,1),Pg=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);
+const bs=new THREE.Shape();bs.moveTo(-.9,0);bs.lineTo(.9,0);bs.lineTo(.45,34);bs.lineTo(-.15,34);
+const Bl=new THREE.ExtrudeGeometry(bs,{depth:.35,bevelEnabled:false}),LN=new THREE.LineBasicMaterial({color:0x1d2326});
+const SK=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{t:{value:new THREE.Color()},b:{value:new THREE.Color()}},vertexShader:"varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",fragmentShader:"uniform vec3 t,b;varying vec3 p;void main(){float h=clamp(normalize(p).y*1.6+.1,0.,1.);gl_FragColor=vec4(mix(b,t,pow(h,.7)),1.);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}"});
+const mt=(c,r=.85,m=0)=>{const k=c+"|"+r+"|"+m;return Mc[k]||(Mc[k]=new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m}))};
+const cm=(k,f)=>Cm[k]||(Cm[k]=f()),rep=(t,x,y)=>cm(t.uuid+x+y,()=>{const c=t.clone();c.needsUpdate=true;c.repeat.set(x,y);return c}),rnd=i=>Math.abs(Math.sin(i*12.9898+4.1)*43758.5453)%1;
+function tex(w,h,fn,rx,ry){const c=document.createElement("canvas");c.width=w;c.height=h;fn(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t}
+function mkTex(){
+const nz=(g,w,h,n)=>{for(let i=0;i<n;i++){g.fillStyle=Math.random()<.5?"rgba(0,0,0,.07)":"rgba(255,255,255,.06)";g.fillRect(Math.random()*w,Math.random()*h,2,2)}};
+X.grass=tex(256,256,(g,w,h)=>{g.fillStyle="#5b7a47";g.fillRect(0,0,w,h);for(let i=0;i<1100;i++){g.fillStyle=`hsl(${85+Math.random()*30},${30+Math.random()*20}%,${28+Math.random()*16}%)`;g.fillRect(Math.random()*w,Math.random()*h,2,3)}},600,600);
+X.asph=tex(128,128,(g,w,h)=>{g.fillStyle="#454b4f";g.fillRect(0,0,w,h);nz(g,w,h,2600)});
+X.clad=tex(128,128,(g,w,h)=>{g.fillStyle="#cfd5d8";g.fillRect(0,0,w,h);for(let x=0;x<w;x+=16){g.fillStyle="#aab2b7";g.fillRect(x,0,2,h);g.fillStyle="#e8ecee";g.fillRect(x+2,0,1,h)}nz(g,w,h,700)});
+X.roof=tex(128,128,(g,w,h)=>{g.fillStyle="#8d969a";g.fillRect(0,0,w,h);g.fillStyle="#7a8388";for(let x=0;x<w;x+=32)g.fillRect(x,0,2,h);nz(g,w,h,900)});
+X.louv=tex(64,64,(g,w,h)=>{g.fillStyle="#2c363c";g.fillRect(0,0,w,h);for(let y=0;y<h;y+=6){g.fillStyle="#5a666c";g.fillRect(0,y,w,2)}});
+X.sign=tex(512,64,(g,w,h)=>{g.fillStyle="#1f3a47";g.fillRect(0,0,w,h);g.fillStyle="#eef2f0";g.font="600 34px sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText("IRELAND DATA CENTRE",w/2,h/2+2)})}
+function setTheme(dk){
+SK.uniforms.t.value.set(dk?0x0a1424:0x4b7fa8);SK.uniforms.b.value.set(dk?0x1d2b3b:0xaebdc4);Sc.fog.color.copy(SK.uniforms.b.value);Sc.fog.near=RAIN?40:350;Sc.fog.far=RAIN?800:2200;
+H1.intensity=dk?.3:.55;D1.intensity=(dk?.35:2.1)*(RAIN?.4:1);D1.color.set(dk?0x9db4ff:0xfff1dc);LM.emissiveIntensity=dk?3:0;WM.emissiveIntensity=dk?1.1:.05;
+const es=new THREE.Scene();es.add(new THREE.Mesh(new THREE.SphereGeometry(100,24,12),SK));const o=envT;envT=PM.fromScene(es,.02);Sc.environment=envT.texture;o&&o.dispose()}
+function inst(g,m,l,col,ns){if(!l.length)return;const o=new THREE.InstancedMesh(g,m,l.length),d=new THREE.Object3D(),c=new THREE.Color();
+l.forEach((a,i)=>{d.position.set(a[0],a[1],a[2]);d.scale.set(a[3],a[4],a[5]);d.rotation.y=a[6]||0;d.updateMatrix();o.setMatrixAt(i,d.matrix);if(col)o.setColorAt(i,c.set(a[7]))});
+o.castShadow=!ns;o.receiveShadow=true;Gp.add(o);if(sk)sk.push(o);return o}
+function M(g,m,x,y,z,sx,sy,sz,ry,ns){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.rotation.y=ry||0;o.castShadow=!ns;o.receiveShadow=true;Gp.add(o);if(sk)sk.push(o);return o}
+const bx=(w,h,d,x,y,z,c,r,mm)=>M(U,mt(c,r||.85,mm||0),x,y+h/2,z,w,h,d);
+function build3d(m){CM=m;
+const n=Math.min(12,Math.ceil(V.it/5)),L=n*30,D=50,hz=D/2,u=Math.min(96,Math.max(n*4,Math.round(V.it*(V.pue-1)*1.5))),gN=m.on?Math.min(36,Math.ceil(m.gen/2.5)):0,wN=m.on&&m.wind>0?Math.min(6,Math.max(1,Math.round(m.wind/4))):0;
+const key=[n,u,gN,wN,V.it].join();if(key===lastK)return;lastK=key;
+while(Gp.children.length){const o=Gp.children[0];Gp.remove(o);o.dispose&&o.dispose()}blades=[];SKIN=[];INT=[];sk=null;
+const cx=-L/2+30,xa=-L/2-70,xb=L/2+(gN?95:35),za=-75,zb=hz+60,sx=-L/2-34,S2=L/2+150;
+const side=cm("s"+L,()=>new THREE.MeshStandardMaterial({map:rep(X.clad,L/2,1),roughness:.5,metalness:.4})),end=cm("e",()=>new THREE.MeshStandardMaterial({map:rep(X.clad,D/2,1),roughness:.5,metalness:.4})),roof=cm("r"+L,()=>new THREE.MeshStandardMaterial({map:rep(X.roof,L/6,D/6),roughness:.9}));
+const sh=new THREE.Mesh(new THREE.BoxGeometry(L,9,D),[end,end,roof,roof,side,side]);sh.position.y=7.5;sh.castShadow=sh.receiveShadow=true;Gp.add(sh);SKIN.push(sh);sh.userData.tag="hall";
+bx(L+.6,3,D+.6,0,0,0,0x8a9196,.9).userData.tag="hall";sk=SKIN;
+[[L+1,.5,hz+.3,0,1],[L+1,.5,-hz-.3,0,1],[.5,D+1,0,L/2+.3,0],[.5,D+1,0,-L/2-.3,0]].forEach(a=>bx(a[0],1.2,a[1],a[3],12,a[1]>1?0:a[2],0xb4bcc0,.6));
+const J=[],Lv=[],Dr=[];
+for(let i=0;i<=n;i++)J.push([-L/2+i*30,7.5,hz+.08,.5,9,.2,0,0x7d878d]);
+for(let i=0;i<n;i++){Lv.push([-L/2+i*30+15,5.6,hz+.07,14,3.6,1,0]);if(i%2==0)Dr.push([-L/2+i*30+30,2.6,-hz-.1,7,5,.3,0,0x59656b])}
+inst(U,mt(0xffffff,.6,.3),J,1,1);inst(Pl,LV,Lv,0,1);inst(U,mt(0xffffff,.5,.4),Dr,1,1);
+sk=null;bx(26,7.5,16,-L/2+13,0,hz+8,0xe9ecee,.6).userData.tag="office";M(Pl,WM,-L/2+13,3.7,hz+16.05,24,5.4,1,0,1);bx(30,.5,7,-L/2+13,6.6,hz+19.5,0x6a747a,.4,.6);
+inst(Cy,mt(0x9aa3a8,.4,.7),[[-L/2+1,3.3,hz+22,.3,6.6,.3],[-L/2+25,3.3,hz+22,.3,6.6,.3]]);
+M(Pl,SG,-L/2+13,10.4,hz+.12,22,2.7,1,0,1);
+sk=SKIN;const pr=n*2,CH=[],FN=[],FR=[];
+for(let i=0;i<u;i++){const x=-L/2+6+(i%pr)*(L-12)/Math.max(pr-1,1),z=-14+Math.floor(i/pr)*11;CH.push([x,14,z,7,2.8,5,0,i%5?0xd9dee0:0xcfd5d8]);FN.push([x,15.5,z,2.1,.15,2.1]);FR.push([x,15.35,z,2.35,.1,2.35])}
+inst(U,mt(0xffffff,.45,.5),CH,1).userData.tag="chill";inst(Cy,mt(0x1c2327,.6),FN);inst(Cy,mt(0xaab2b6,.4,.7),FR);
+bx(L-10,.5,.5,0,12.6,-20,0x5d7f95,.4,.6);bx(L-10,.5,.5,0,12.6,-22,0x9a6a4e,.4,.6);bx(5,3,5,L/2-8,12,18,0xb8c0c4);sk=null;
+const ap=cm("ap",()=>new THREE.MeshStandardMaterial({map:rep(X.asph,8,8),roughness:.95}));
+M(Pg,cm("cp",()=>new THREE.MeshStandardMaterial({map:rep(X.asph,8,4),roughness:.95})),cx,.04,60,62,1,32,0,1);
+M(Pg,cm("rd",()=>new THREE.MeshStandardMaterial({map:rep(X.asph,2,60),roughness:.95})),cx,.04,zb+230,10,1,460,0,1);
+const LI=[],CA=[],CB=[],DS=[];
+for(let r=0;r<2;r++)for(let i=0;i<12;i++){const x=cx-27.5+i*5;LI.push([x,.07,r?68:52,.12,.02,5.2,0,0xe8ebec]);if(rnd(i+r*20)>.25){const c=[0xb33a3a,0x2f4f7a,0xdadfe0,0x262b2e,0x6b7478,0x3e6b4f][Math.floor(rnd(i*3+r)*6)],z=r?68:52,x2=x+2.5;CA.push([x2,.8,z,1.9,1.1,4.4,0,c]);CB.push([x2,1.7,z,1.7,.8,2.4,0,0x20282c])}}
+for(let z=zb+8;z<zb+400;z+=9)DS.push([cx,.07,z,.2,.02,4,0,0xe8ebec]);
+inst(U,mt(0xffffff,.4),LI.concat(DS),1,1);inst(U,mt(0xffffff,.35,.5),CA,1);inst(U,mt(0x20282c,.2,.8),CB.map(a=>a.slice(0,7)));
+const LP=[],LH=[];for(let i=0;i<n+8;i++){const x=i<n+2?-L/2+50+i*(L-50)/(n+1):cx-20+(i-n-2)*14,z=i<n+2?hz+3:60;LP.push([x,4,z,.12,8,.12]);LH.push([x,8.1,z,1,.25,.5])}
+inst(Cy,mt(0x59646a,.5,.7),LP);inst(U,LM,LH,0,1);
+const FP=[],rl=(x1,z1,x2,z2)=>{const len=Math.hypot(x2-x1,z2-z1),k=Math.ceil(len/6);for(let i=0;i<=k;i++)FP.push([x1+(x2-x1)*i/k,1.2,z1+(z2-z1)*i/k,.1,2.4,.1]);[.9,1.7,2.4].forEach(y=>M(U,mt(0x8a9296,.5,.8),(x1+x2)/2,y,(z1+z2)/2,len,.07,.07,-Math.atan2(z2-z1,x2-x1),1))};
+rl(xa,za,xb,za);rl(xa,za,xa,zb);rl(xb,za,xb,zb);rl(xa,zb,cx-8,zb);rl(cx+8,zb,xb,zb);inst(Cy,mt(0x707a7f,.5,.7),FP,0,1);
+bx(4,3,6,cx+10,0,zb-3,0xdfe3e5,.6);bx(5,.3,7,cx+10,3,zb-3,0x59646a);bx(8,.2,.2,cx-4,1.1,zb,0xd9453a);
+if(gN){const rw=Math.ceil(gN/4),px=L/2+46,pz=-15+(rw-1)*4.5,GC=[],GV=[],GS=[];
+M(Pg,mt(0x9ca2a5,.95),px,.05,pz,70,1,rw*9+8,0,1);
+for(let i=0;i<gN;i++){const x=L/2+22+(i%4)*16,z=-15+Math.floor(i/4)*9;GC.push([x,1.85,z,13,3.4,5,0,[0x7a5a86,0x6f5280,0x84649a][i%3]]);GV.push([x-1,1.9,z+2.52,9,2,1,0]);GS.push([x+4.8,6.2,z,.45,6,.45])}
+inst(U,mt(0xffffff,.5,.3),GC,1).userData.tag="gen";inst(Pl,LV,GV,0,1);inst(Cy,mt(0x3a3340,.5,.6),GS);
+M(Cy,mt(0xcfd4d6,.4,.5),px,2.6,-21.5,2.2,14,2.2).rotation.z=Math.PI/2}
+M(Pg,mt(0x9ca2a5,.95),sx,.05,-8,34,1,36,0,1);
+const TF=[],BU=[];for(let i=0;i<3;i++){const x=sx-9+i*9;bx(7,5,5,x,.1,-8,0x62756a,.6,.3).userData.tag="sub";M(Cy,mt(0x62756a,.6,.3),x,6.3,-8,.8,6,.8).rotation.z=Math.PI/2;TF.push([x+4,2.6,-8,.3,3.6,4.2,0,0x58665d]);for(let j=0;j<3;j++)BU.push([x-2+j*2,6.3,-8,.25,2.2,.25,0,0x8b5a3c])}
+inst(U,mt(0xffffff,.6),TF,1);inst(Cy,mt(0xffffff,.4),BU,1);
+inst(U,mt(0x6b7479,.5,.6),[[sx-14,5,-18,.5,10,.5],[sx+14,5,-18,.5,10,.5],[sx-14,5,2,.5,10,.5],[sx+14,5,2,.5,10,.5],[sx,9.7,-18,28,.4,.4],[sx,9.7,2,28,.4,.4]]);
+const wire=(a,b,sg)=>{const p=[];for(let i=0;i<=16;i++){const t=i/16;p.push(new THREE.Vector3(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t-sg*4*t*(1-t),a[2]+(b[2]-a[2])*t))}Gp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),LN))};
+const pyl=x=>{const o=M(Py,new THREE.MeshBasicMaterial({color:0x7d878c,wireframe:true}),x,21,-8,5,42,5,Math.PI/4,1);bx(14,.5,.5,x,34,-8,0x7d878c,.5,.6);bx(10,.5,.5,x,28,-8,0x7d878c,.5,.6)};
+const p1=sx-30,p2=xa-150;pyl(p1);pyl(p2);
+for(let k=-1;k<=1;k++){wire([p1+k*7,33.7,-8],[sx+k*9,9.9,-18],2);wire([p1+k*7,33.7,-8],[p2+k*7,33.7,-8],6)}
+for(let i=0;i<wN;i++){const x=-200+i*70,z=-260;M(Tw,mt(0xeceff0,.4),x,37.5,z,1.3,75,1.3).userData.tag="wind";bx(6,3.2,3.2,x,75.5,z+.5,0xeef0f1,.4);M(Sp,mt(0xeef0f1,.4),x,77,z+3,1.7,1.7,1.7);
+const g=new THREE.Group();g.position.set(x,77,z+4.2);for(let j=0;j<3;j++){const s=new THREE.Group(),b=new THREE.Mesh(Bl,mt(0xf4f6f6,.4));b.castShadow=true;s.add(b);s.rotation.z=j*2.094;g.add(s)}Gp.add(g);blades.push(g)}
+const TR=[],CN=[],BR=[],FL=[],HG=[];
+for(let i=0;i<90;i++){const x=(rnd(i)-.5)*(L+700),z=(rnd(i+200)-.5)*620-40;if(x>xa-12&&x<xb+12&&z>za-12&&z<zb+12||Math.abs(x-cx)<12&&z>0)continue;const sc=.8+rnd(i+9)*.7;
+if(i%3){const c=[0x2d4a2f,0x365a36,0x244126][i%3];TR.push([x,1.5,z,.4,3,.4,0,0x4a3a2a]);CN.push([x,2.5+3*sc,z,2.6*sc,6*sc,2.6*sc,0,c]);CN.push([x,2.5+6.5*sc,z,1.9*sc,5*sc,1.9*sc,0,c])}
+else{TR.push([x,1.5*sc,z,.4,3*sc,.4,0,0x4a3a2a]);BR.push([x,5.4*sc,z,3.6*sc,3.2*sc,3.6*sc,0,[0x4f7a3a,0x5d8a40,0x6a8f3f][Math.floor(rnd(i+3)*3)]])}}
+for(let i=0;i<12;i++){const x=(i%2?1:-1)*(L/2+150+rnd(i+50)*500),z=(rnd(i+80)-.5)*900,w=60+rnd(i+5)*80,d=60+rnd(i+7)*80;FL.push([x,.08,z,w,1,d,0,[0x557a3d,0x6d8c47,0x86954f,0x4b6c39][i%4]]);HG.push([x,1,z+d/2,w,2,1,0,0x2f4a2a],[x,1,z-d/2,w,2,1,0,0x2f4a2a])}
+inst(Cy,mt(0xffffff,.9),TR,1);inst(Co,mt(0xffffff,.95),CN,1);inst(Sp,mt(0xffffff,.95),BR,1);inst(Pg,mt(0xffffff,1),FL,1,1);inst(U,mt(0xffffff,1),HG,1);
+fit=Math.max(L+140,230);if(n!==lastN){lastN=n;tdist=dist=fit}tg.set(m.on?10:-10,6,0);CX=cx;buildInt(n,L,D,hz);setCut(CUT);
+D1.target.position.copy(tg);D1.position.set(tg.x+120,200,tg.z+90);const c=D1.shadow.camera;c.left=c.bottom=-S2;c.right=c.top=S2;c.updateProjectionMatrix()}
+
+const ray=new THREE.Raycaster(),pt=new THREE.Vector2();
+const TIPS={hall:m=>["Data halls",`${Math.ceil(V.it/5)} halls hold ${V.it} MW of IT load. Peak draw with cooling is ${f(m.peak)} MW, and the building and fit-out cost about €${f(m.cb,0)}m.`],
+rack:m=>["Racks",`About ${f(V.it*125,0)} racks at 8 kW each. Cold aisles (blue) face the fronts of the racks and hot aisles (orange) sit behind them.`],
+chill:m=>["Rooftop cooling",`${f(V.it*(V.pue-1))} MW of cooling and other overhead at a PUE of ${V.pue}. Ireland’s mild climate lets these run largely on outside air.`],
+gen:m=>["On-site generation or storage",`${f(m.gen,0)} MW costing about €${f(m.cg,0)}m, earning about €${f(m.gen*V.cap/1000,1)}m a year from the capacity market (your assumption).`],
+sub:m=>["Substation",`A ${f(m.mic,0)} MVA connection. At full fill the site uses ${f(m.mwh/1000,0)} GWh a year, about €${f(m.mwh*V.price/1e6,1)}m at today’s price.`],
+wind:m=>["New wind capacity",`About ${f(m.wind,0)} MW of new Irish wind would supply ${V.ren}% of the site’s yearly energy, as the policy requires.`],
+office:m=>["Office and security",`Staff entrance and control room. Running costs for the whole site are ${V.opex}% of the build cost each year.`]};
+function showTip(tag){const t=document.getElementById("tip"),T=tag&&CM&&TIPS[tag];if(!T){t.hidden=true;return}const r=T(CM);t.innerHTML=`<h3>${r[0]}</h3><p>${r[1]}</p>`;t.hidden=false}
+function pick(e){const r=R.domElement.getBoundingClientRect();pt.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pt,Cam);
+const h=ray.intersectObjects(Gp.children,false).find(x=>x.object.userData.tag&&x.object.visible);showTip(h?h.object.userData.tag:null)}
+function setCut(on){CUT=on;SKIN.forEach(o=>o.visible=!on);INT.forEach(o=>o.visible=on)}
+function ctl(){const q=id=>document.getElementById(id),pr=(b,v)=>b.setAttribute("aria-pressed",v);
+q("b_cut").onclick=e=>{setCut(!CUT);pr(e.target,CUT);tev=CUT?1.05:.34;tdist=CUT?fit*.55:fit;showTip(null)};
+q("b_night").onclick=e=>{NIGHT=!isDk();pr(e.target,NIGHT)};
+q("b_rain").onclick=e=>{RAIN=!RAIN;pr(e.target,RAIN);dk0=null;if(RN)RN.visible=RAIN};
+q("b_in").onclick=()=>tdist=Math.max(40,tdist*.8);q("b_out").onclick=()=>tdist=Math.min(fit*2,tdist*1.25);
+pr(q("b_night"),isDk())}
+function buildInt(n,L,D,hz){
+sk=INT;const rk=Math.max(1,Math.round(V.it/n*125)),RW=10,rr=Math.ceil(rk/RW),len=rr*.6,RA=[],AI=[],TY=[],CR=[],UP=[],WL=[],cl=[0x1c2328,0x232b31,0x2a343a];
+M(Pg,mt(0x7f8b90,.45,.4),0,3.05,0,L-.6,1,D-.6,0,1);
+for(let h=0;h<n;h++){const hx=-L/2+h*30;
+for(let k=0;k<RW;k++){const x=hx+3.2+k*2.6;for(let i=0;i<rr;i++)RA.push([x,4.15,-len/2+.3+i*.6,1.2,2.2,.56,0,cl[(i+k)%3]]);TY.push([x,5.5,0,.5,.1,len,0,0x8a949a]);if(k<RW-1)AI.push([x+1.3,3.08,0,1.4,.02,len,0,k%2?0xb5663a:0x3f7fa6])}
+for(let j=0;j<4;j++)CR.push([hx+4+j*7.5,4.25,-hz+2.2,2.2,2.4,1.1,0,0x6f8aa0]);
+UP.push([hx+15,4.35,hz-2.5,24,2.6,2.2,0,0x4f6b5a])}
+for(let i=0;i<=n;i++)WL.push([-L/2+i*30,4.8,0,.3,3.5,D,0,0xcfd5d8]);WL.push([0,4.8,hz,L,3.5,.3,0,0xcfd5d8],[0,4.8,-hz,L,3.5,.3,0,0xcfd5d8]);
+inst(U,mt(0xffffff,.5,.4),RA,1).userData.tag="rack";inst(U,mt(0xffffff,.7),AI,1,1);inst(U,mt(0xffffff,.5,.6),TY.concat(UP),1);inst(U,mt(0xffffff,.6,.3),CR,1);inst(U,mt(0xffffff,.8),WL,1);sk=null}
+function init3(){const cv=document.getElementById("cv");
+try{R=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"})}catch(e){cv.innerHTML='<p class="hint">This browser can’t show the 3D view. The tabs below still work.</p>';return}
+R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.outputEncoding=THREE.sRGBEncoding;cv.appendChild(R.domElement);
+Sc=new THREE.Scene();Sc.fog=new THREE.Fog(0xaebdc4,350,2200);Cam=new THREE.PerspectiveCamera(36,1,1,6000);tg=new THREE.Vector3(0,6,0);PM=new THREE.PMREMGenerator(R);mkTex();
+LV=new THREE.MeshStandardMaterial({map:X.louv,roughness:.6,metalness:.5});WM=new THREE.MeshStandardMaterial({color:0x24384a,roughness:.08,metalness:.9,emissive:0xffd9a0});LM=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffd9a0});SG=new THREE.MeshBasicMaterial({map:X.sign});
+H1=new THREE.HemisphereLight(0xdfe9f0,0x4a5a44,.55);D1=new THREE.DirectionalLight(0xfff1dc,2.1);D1.castShadow=true;D1.shadow.mapSize.set(2048,2048);D1.shadow.bias=-.0004;D1.shadow.normalBias=.6;D1.shadow.camera.near=10;D1.shadow.camera.far=700;Sc.add(H1,D1,D1.target);
+const dome=new THREE.Mesh(new THREE.SphereGeometry(3000,32,16),SK);dome.renderOrder=-1;Sc.add(dome);
+const gr=new THREE.Mesh(Pg,new THREE.MeshStandardMaterial({map:X.grass,roughness:1}));gr.scale.set(6000,1,6000);gr.receiveShadow=true;Sc.add(gr);
+Gp=new THREE.Group();Sc.add(Gp);
+for(let i=0;i<5;i++){const g=new THREE.Group(),b=new THREE.Mesh(U,mt([0xb33a3a,0x2f4f7a,0xdadfe0,0x262b2e,0x3e6b4f][i],.35,.5)),t=new THREE.Mesh(U,mt(0x20282c,.1,.8));b.scale.set(1.9,.9,4.4);b.position.y=.8;t.scale.set(1.7,.8,2.3);t.position.set(0,1.6,-.2);b.castShadow=t.castShadow=true;g.add(b,t);g.userData={z:100+i*80,d:i%2?1:-1,v:.45+i*.05};Sc.add(g);Cr.push(g)}
+const rp=new Float32Array(9000);for(let i=0;i<1500;i++){const x=(Math.random()-.5)*400,y=Math.random()*220,z=(Math.random()-.5)*400;rp.set([x,y,z,x-.4,y-5,z],i*6)}
+RN=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.BufferAttribute(rp,3)),new THREE.LineBasicMaterial({color:0xbfd0dc,transparent:true,opacity:.45}));RN.visible=false;RN.frustumCulled=false;Sc.add(RN);
+const d0=R.domElement;let dr=null,st=[0,0];
+const ps=new Map();let pd=0,pz=false;
+d0.onpointerdown=e=>{ps.set(e.pointerId,[e.clientX,e.clientY]);dr=st=[e.clientX,e.clientY];auto=false;d0.setPointerCapture(e.pointerId)};
+d0.onpointermove=e=>{if(!ps.has(e.pointerId))return;ps.set(e.pointerId,[e.clientX,e.clientY]);if(ps.size===2){const[a,b]=[...ps.values()],q=Math.hypot(a[0]-b[0],a[1]-b[1]);pz=true;if(pd)tdist=Math.min(fit*2,Math.max(40,tdist*pd/q));pd=q;return}if(!dr)return;taz-=(e.clientX-dr[0])*.006;tev=Math.min(1.25,Math.max(.05,tev+(e.clientY-dr[1])*.005));dr=[e.clientX,e.clientY]};
+d0.onpointerup=d0.onpointercancel=e=>{ps.delete(e.pointerId);pd=0;if(ps.size){const v=[...ps.values()][0];dr=[v[0],v[1]];return}const tap=!pz&&dr&&Math.hypot(e.clientX-st[0],e.clientY-st[1])<5;dr=null;pz=false;if(tap)pick(e)};
+d0.addEventListener("wheel",e=>{e.preventDefault();tdist=Math.min(fit*2,Math.max(40,tdist*(1+e.deltaY*.001)))},{passive:false});
+new ResizeObserver(()=>{R.setSize(cv.clientWidth,cv.clientHeight);Cam.aspect=cv.clientWidth/cv.clientHeight;Cam.updateProjectionMatrix()}).observe(cv);
+(function loop(){requestAnimationFrame(loop);const dk=isDk();if(dk!==dk0){dk0=dk;setTheme(dk)}
+if(!rm.matches){if(auto)taz+=.0012;blades.forEach(b=>b.rotation.z+=.02);
+Cr.forEach(c=>{const u=c.userData;u.z+=u.d*u.v;if(u.z>470)u.z=95;if(u.z<95)u.z=470;c.position.set(CX+(u.d>0?2.4:-2.4),0,u.z);c.rotation.y=u.d>0?0:Math.PI});
+if(RAIN){const a=RN.geometry.attributes.position,q=a.array;for(let i=0;i<9000;i+=6){q[i+1]-=4;q[i+4]-=4;if(q[i+4]<0){q[i+1]+=220;q[i+4]+=220}}a.needsUpdate=true;RN.position.set(tg.x,0,tg.z)}}
+az+=(taz-az)*.1;ev+=(tev-ev)*.1;dist+=(tdist-dist)*.1;
+Cam.position.set(tg.x+dist*Math.cos(ev)*Math.sin(az),dist*Math.sin(ev),tg.z+dist*Math.cos(ev)*Math.cos(az));Cam.lookAt(tg);R.render(Sc,Cam)})()}
+const tb=[...document.querySelectorAll(".tabs button")];
+tb.forEach(b=>b.onclick=()=>{const o=b.getAttribute("aria-expanded")==="true";tb.forEach(x=>{x.setAttribute("aria-expanded","false");document.getElementById(x.dataset.p).hidden=true});if(!o){b.setAttribute("aria-expanded","true");document.getElementById(b.dataset.p).hidden=false}});
+init3();tb[0].click();ctl();
+run();
+</script></body></html>
